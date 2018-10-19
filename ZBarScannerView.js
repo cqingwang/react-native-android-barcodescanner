@@ -10,11 +10,12 @@ import {
     ViewPropTypes
 } from 'react-native';
 
-const CameraManager = NativeModules.CameraManager || NativeModules.CameraModule;
+const CameraManager = NativeModules.CameraManager ||NativeModules.ZBarCamera ||NativeModules.CameraModule;
 const CAMERA_REF = 'camera';
 
 function convertNativeProps(props) {
     const newProps = { ...props };
+
     if (typeof props.aspect === 'string') {
         newProps.aspect = Camera.constants.Aspect[props.aspect];
     }
@@ -143,15 +144,19 @@ export default class Camera extends Component {
         this.refs[CAMERA_REF].setNativeProps(props);
     }
 
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
         this.state = {
+          flashMode:props.flashMode,
             isAuthorized: false,
             isRecording: false
         };
     }
 
     async componentWillMount() {
+      this.onSwitchFlashSubscribe=DeviceEventEmitter.addListener("onSwitchFlashKey",(flashMode)=>{
+        this.setState({flashMode,})
+      })
         this._addOnBarCodeReadListener()
 
         let { captureMode } = convertNativeProps({ captureMode: this.props.captureMode })
@@ -165,6 +170,9 @@ export default class Camera extends Component {
     }
 
     componentWillUnmount() {
+      if(this.onSwitchFlashSubscribe){
+        this.onSwitchFlashSubscribe.remove()
+      }
         this._removeOnBarCodeReadListener()
 
         if (this.state.isRecording) {
@@ -173,6 +181,7 @@ export default class Camera extends Component {
     }
 
     componentWillReceiveProps(newProps) {
+
         const { onBarCodeRead } = this.props
         if (onBarCodeRead !== newProps.onBarCodeRead) {
             this._addOnBarCodeReadListener(newProps)
@@ -198,7 +207,8 @@ export default class Camera extends Component {
 
     render() {
         const style = [styles.base, this.props.style];
-        const nativeProps = convertNativeProps(this.props);
+        const nativeProps = convertNativeProps({...this.props,flashMode:this.state.flashMode});
+
 
         return <RCTCamera ref={CAMERA_REF} {...nativeProps} />;
     }
