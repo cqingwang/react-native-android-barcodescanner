@@ -258,25 +258,28 @@ class RCTCameraViewFinder extends TextureView implements TextureView.SurfaceText
                 return null;
             }
 
-            Camera.Size size = camera.getParameters().getPreviewSize();
-
-            int width = size.width;
-            int height = size.height;
-
-            // rotate for zxing if orientation is portrait
-            if (RCTCamera.getInstance().getActualDeviceOrientation() == 0) {
-                byte[] rotated = new byte[imageData.length];
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        rotated[x * height + height - y - 1] = imageData[x + y * width];
-                    }
-                }
-                width = size.height;
-                height = size.width;
-                imageData = rotated;
-            }
-
+            
             try {
+                
+                Camera.Size size = camera.getParameters().getPreviewSize();
+
+                int width = size.width;
+                int height = size.height;
+
+                // rotate for zxing if orientation is portrait
+                if (RCTCamera.getInstance().getActualDeviceOrientation() == 0) {
+                    byte[] rotated = new byte[imageData.length];
+                    for (int y = 0; y < height; y++) {
+                        for (int x = 0; x < width; x++) {
+                            rotated[x * height + height - y - 1] = imageData[x + y * width];
+                        }
+                    }
+                    width = size.height;
+                    height = size.width;
+                    imageData = rotated;
+                }
+
+                
                 Image barcode = new Image(width, height, "Y800");
                 barcode.setData(imageData);
                 int r = mScanner.scanImage(barcode);
